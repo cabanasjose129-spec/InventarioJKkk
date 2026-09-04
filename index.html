@@ -970,10 +970,45 @@ let scanTarget = null;
 let scanRAF = null;
 let scanPaused = false;
 let scanFlashTimeout = null;
+let audioCtx = null;
+
+function ensureAudioCtx(){
+  if(!audioCtx){
+    try{ audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }catch(e){ /* audio no disponible */ }
+  }
+  if(audioCtx && audioCtx.state === 'suspended'){ audioCtx.resume().catch(() => {}); }
+}
+
+function beep(ok){
+  if(!audioCtx) return;
+  const tone = (freq, start, dur) => {
+    try{
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      const t0 = audioCtx.currentTime + start;
+      gain.gain.setValueAtTime(0.0001, t0);
+      gain.gain.exponentialRampToValueAtTime(0.25, t0 + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      osc.start(t0);
+      osc.stop(t0 + dur + 0.02);
+    }catch(e){ /* audio no disponible */ }
+  };
+  if(ok){
+    tone(1050, 0, 0.11); // pip agudo y corto: escaneo aplicado
+  } else {
+    tone(220, 0, 0.16);      // dos tonos graves: no se pudo aplicar
+    tone(220, 0.2, 0.16);
+  }
+}
 
 async function openScanner(target){
   scanTarget = target;
   scanPaused = false;
+  ensureAudioCtx();
   $('scanStatus').textContent = target === 'movimiento'
     ? 'Escaneá cada suela: se suma o resta sola del inventario.'
     : 'Apuntá la cámara al código de barras...';
@@ -1011,6 +1046,7 @@ function handleScanResult(code){
     applyMovementScan(code);
     return; // la cámara sigue activa para encadenar más escaneos
   }
+  beep(true);
   closeScanner();
   if(scanTarget === 'search'){
     $('searchInput').value = code;
@@ -1028,8 +1064,10 @@ async function applyMovementScan(code){
   const cantidad = parseInt($('mCantidad').value, 10) || 1;
 
   if(!item){
+    beep(false);
     scanFeedback(`✕ Código sin coincidencia en el inventario: ${code}`, false);
   } else if(tipo === 'salida' && cantidad > item.cantidad){
+    beep(false);
     scanFeedback(`✕ Stock insuficiente de ${item.modelo} ${item.color} T${item.talle} (disponible: ${item.cantidad})`, false);
   } else {
     item.cantidad += tipo === 'entrada' ? cantidad : -cantidad;
@@ -1038,6 +1076,7 @@ async function applyMovementScan(code){
     await saveMoves();
     render();
     $('mItem').value = item.id;
+    beep(true);
     scanFeedback(`✓ ${tipo === 'entrada' ? 'Entrada' : 'Salida'} aplicada: ${item.modelo} ${item.color} T${item.talle} (${tipo === 'entrada' ? '+' : '-'}${cantidad})`, true);
   }
 
