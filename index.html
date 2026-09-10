@@ -47,7 +47,6 @@ header{
   align-items:center;
   justify-content:space-between;
   position:relative;
-  overflow:hidden;
   margin-bottom: 18px;
 }
 header::before, header::after{
@@ -84,6 +83,44 @@ h1{
   border-radius: 4px;
   white-space: nowrap;
 }
+
+.menu-wrap{ position: relative; }
+.menu-btn{
+  width: 34px; height: 34px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--panel-2);
+  color: var(--paper);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+.menu-btn:hover{ border-color: var(--paper-dim); }
+.menu-dropdown{
+  display: none;
+  position: absolute;
+  right: 0; top: calc(100% + 6px);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  min-width: 190px;
+  padding: 6px;
+  z-index: 40;
+  box-shadow: 0 10px 24px rgba(0,0,0,0.35);
+}
+.menu-dropdown.show{ display: flex; flex-direction: column; gap: 2px; }
+.menu-item{
+  text-align: left;
+  background: none;
+  border: none;
+  color: var(--paper);
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  padding: 9px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.menu-item:hover{ background: var(--panel-2); }
 
 
 
@@ -342,14 +379,14 @@ input:focus, select:focus{ border-color: var(--amber); }
 }
 
 /* ---------- INVENTARIO: rediseño minimalista ---------- */
-#tab-inv .inv-toolbar{
+.inv-toolbar{
   display: flex;
   flex-direction: column;
   gap: 10px;
   margin-bottom: 18px;
 }
-#tab-inv .inv-search{ position: relative; }
-#tab-inv .inv-search input{
+.inv-search{ position: relative; }
+.inv-search input{
   width: 100%;
   background: var(--panel);
   border: 1px solid var(--border);
@@ -359,9 +396,9 @@ input:focus, select:focus{ border-color: var(--amber); }
   font-size: 14px;
   color: var(--paper);
 }
-#tab-inv .inv-search input::placeholder{ color: #7a7060; }
-#tab-inv .inv-search input:focus{ outline: none; border-color: var(--amber); }
-#tab-inv .inv-search button{
+.inv-search input::placeholder{ color: #7a7060; }
+.inv-search input:focus{ outline: none; border-color: var(--amber); }
+.inv-search button{
   position: absolute;
   right: 4px; top: 50%;
   transform: translateY(-50%);
@@ -373,14 +410,14 @@ input:focus, select:focus{ border-color: var(--amber); }
   color: var(--paper-dim);
   border-radius: 6px;
 }
-#tab-inv .inv-search button:hover{ background: var(--panel-2); }
+.inv-search button:hover{ background: var(--panel-2); }
 
-#tab-inv .inv-filters{
+.inv-filters{
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
 }
-#tab-inv .inv-filters select{
+.inv-filters select{
   flex: 1;
   min-width: 110px;
   background: var(--panel);
@@ -391,14 +428,14 @@ input:focus, select:focus{ border-color: var(--amber); }
   font-size: 13px;
   color: var(--paper-dim);
 }
-#tab-inv .inv-filters select:focus{ outline: none; border-color: var(--amber); color: var(--paper); }
+.inv-filters select:focus{ outline: none; border-color: var(--amber); color: var(--paper); }
 
-#tab-inv .inv-actions{
+.inv-actions{
   display: flex;
   gap: 8px;
   justify-content: flex-end;
 }
-#tab-inv .inv-btn{
+.inv-btn{
   font-family: 'Inter', sans-serif;
   font-size: 13px;
   font-weight: 600;
@@ -408,17 +445,17 @@ input:focus, select:focus{ border-color: var(--amber); }
   border: 1px solid transparent;
   transition: filter .15s ease, border-color .15s ease, color .15s ease;
 }
-#tab-inv .inv-btn-ghost{ background: transparent; border-color: var(--border); color: var(--paper-dim); }
-#tab-inv .inv-btn-ghost:hover{ color: var(--paper); border-color: var(--paper-dim); }
-#tab-inv .inv-btn-primary{ background: var(--amber); color: var(--rubber); }
-#tab-inv .inv-btn-primary:hover{ filter: brightness(1.08); }
+.inv-btn-ghost{ background: transparent; border-color: var(--border); color: var(--paper-dim); }
+.inv-btn-ghost:hover{ color: var(--paper); border-color: var(--paper-dim); }
+.inv-btn-primary{ background: var(--amber); color: var(--rubber); }
+.inv-btn-primary:hover{ filter: brightness(1.08); }
 
-#tab-inv .inv-list{
+.inv-list{
   border: 1px solid var(--border);
   border-radius: 10px;
   overflow: hidden;
 }
-#tab-inv .inv-row{
+.inv-row{
   display: flex;
   align-items: center;
   gap: 12px;
@@ -427,17 +464,17 @@ input:focus, select:focus{ border-color: var(--amber); }
   border-bottom: 1px solid var(--border);
   transition: background .12s ease;
 }
-#tab-inv .inv-row:last-child{ border-bottom: none; }
-#tab-inv .inv-row:hover{ background: var(--panel-2); }
-#tab-inv .inv-dot{
+.inv-row:last-child{ border-bottom: none; }
+.inv-row:hover{ background: var(--panel-2); }
+.inv-dot{
   width: 6px; height: 6px;
   border-radius: 50%;
   background: var(--teal);
   flex-shrink: 0;
 }
-#tab-inv .inv-row.low .inv-dot{ background: var(--alert); }
-#tab-inv .inv-main{ flex: 1; min-width: 0; }
-#tab-inv .inv-modelo{
+.inv-row.low .inv-dot{ background: var(--alert); }
+.inv-main{ flex: 1; min-width: 0; }
+.inv-modelo{
   font-size: 14px;
   font-weight: 600;
   color: var(--paper);
@@ -445,12 +482,12 @@ input:focus, select:focus{ border-color: var(--amber); }
   overflow: hidden;
   text-overflow: ellipsis;
 }
-#tab-inv .inv-meta{
+.inv-meta{
   font-size: 12px;
   color: var(--paper-dim);
   margin-top: 2px;
 }
-#tab-inv .inv-qty{
+.inv-qty{
   font-family: 'JetBrains Mono', monospace;
   font-size: 15px;
   font-weight: 600;
@@ -458,9 +495,9 @@ input:focus, select:focus{ border-color: var(--amber); }
   min-width: 40px;
   text-align: right;
 }
-#tab-inv .inv-row.low .inv-qty{ color: var(--alert); }
-#tab-inv .inv-row-actions{ display: flex; gap: 2px; }
-#tab-inv .inv-icon{
+.inv-row.low .inv-qty{ color: var(--alert); }
+.inv-row-actions{ display: flex; gap: 2px; }
+.inv-icon{
   width: 28px; height: 28px;
   border-radius: 6px;
   border: none;
@@ -472,8 +509,8 @@ input:focus, select:focus{ border-color: var(--amber); }
   align-items: center;
   justify-content: center;
 }
-#tab-inv .inv-icon:hover{ background: var(--border); color: var(--paper); }
-#tab-inv .inv-empty{
+.inv-icon:hover{ background: var(--border); color: var(--paper); }
+.inv-empty{
   text-align: center;
   padding: 40px 20px;
   color: var(--paper-dim);
@@ -483,8 +520,8 @@ input:focus, select:focus{ border-color: var(--amber); }
 }
 
 @media (max-width: 640px){
-  #tab-inv .inv-actions{ flex-direction: column; }
-  #tab-inv .inv-actions .inv-btn{ width: 100%; }
+  .inv-actions{ flex-direction: column; }
+  .inv-actions .inv-btn{ width: 100%; }
 }
 </style>
 </head>
@@ -499,6 +536,17 @@ input:focus, select:focus{ border-color: var(--amber); }
       </div>
     </div>
     <div class="datebadge" id="todayBadge">--/--/----</div>
+    <div class="menu-wrap">
+      <button class="menu-btn" id="menuToggle" title="Más opciones">⋮</button>
+      <div class="menu-dropdown" id="menuDropdown">
+        <button class="menu-item" id="importExcelBtn">📤 Importar Excel</button>
+        <button class="menu-item" id="exportExcel">⭳ Exportar Excel</button>
+        <button class="menu-item" id="backupData">💾 Backup</button>
+        <button class="menu-item" id="restoreData">📥 Restaurar</button>
+        <input type="file" id="importExcelFile" accept=".xlsx,.xls" style="display:none;">
+        <input type="file" id="restoreFile" accept="application/json" style="display:none;">
+      </div>
+    </div>
   </header>
 
   <div class="stats">
@@ -508,7 +556,8 @@ input:focus, select:focus{ border-color: var(--amber); }
   </div>
 
   <div class="tabs">
-    <button class="tabbtn active" data-tab="inv">Inventario</button>
+    <button class="tabbtn active" data-tab="inv">Dep&oacute;sito Gallegos</button>
+    <button class="tabbtn" data-tab="jk">Dep&oacute;sito JK</button>
     <button class="tabbtn" data-tab="mov">Movimientos</button>
     <button class="tabbtn" data-tab="low">Bajo m&iacute;nimo</button>
   </div>
@@ -526,16 +575,29 @@ input:focus, select:focus{ border-color: var(--amber); }
         <select id="filterTalle"><option value="">Talle</option></select>
       </div>
       <div class="inv-actions">
-        <button class="inv-btn inv-btn-ghost" id="importExcelBtn" title="Cargar un Excel con Modelo, Color, Talle y Cantidad">📤 Importar Excel</button>
-        <input type="file" id="importExcelFile" accept=".xlsx,.xls" style="display:none;">
-        <button class="inv-btn inv-btn-ghost" id="backupData" title="Descarga un archivo con todo tu inventario y movimientos">💾 Backup</button>
-        <button class="inv-btn inv-btn-ghost" id="restoreData" title="Carga un backup descargado desde otro dispositivo">📥 Restaurar</button>
-        <input type="file" id="restoreFile" accept="application/json" style="display:none;">
-        <button class="inv-btn inv-btn-ghost" id="exportExcel">Exportar Excel</button>
         <button class="inv-btn inv-btn-primary" id="openAddItem">+ Nueva suela</button>
       </div>
     </div>
     <div class="inv-list" id="itemsList"></div>
+  </div>
+
+  <!-- DEPÓSITO JK -->
+  <div id="tab-jk" style="display:none;">
+    <div class="inv-toolbar">
+      <div class="inv-search">
+        <input id="searchInputJK" placeholder="Buscar suela...">
+        <button id="scanSearchBtnJK" title="Escanear código de barras">📷</button>
+      </div>
+      <div class="inv-filters">
+        <select id="filterModeloJK"><option value="">Modelo</option></select>
+        <select id="filterColorJK"><option value="">Color</option></select>
+        <select id="filterTalleJK"><option value="">Talle</option></select>
+      </div>
+      <div class="inv-actions">
+        <button class="inv-btn inv-btn-primary" id="openAddItemJK">+ Nueva suela</button>
+      </div>
+    </div>
+    <div class="inv-list" id="jkList"></div>
   </div>
 
   <!-- MOVIMIENTOS -->
@@ -605,6 +667,13 @@ input:focus, select:focus{ border-color: var(--amber); }
 <div class="overlay" id="moveOverlay">
   <div class="modal">
     <h2>Registrar movimiento</h2>
+    <div class="field">
+      <label>Dep&oacute;sito</label>
+      <select id="mDeposito">
+        <option value="gallegos">Dep&oacute;sito Gallegos</option>
+        <option value="jk">Dep&oacute;sito JK</option>
+      </select>
+    </div>
     <div class="row2">
       <div class="field">
         <label>Tipo</label>
@@ -622,7 +691,9 @@ input:focus, select:focus{ border-color: var(--amber); }
     <div class="scan-hint">o eleg&iacute; la suela manualmente:</div>
     <div class="field">
       <label>Suela</label>
-      <select id="mItem"></select>
+      <input id="mItemInput" list="mItemDatalist" placeholder="Escribí modelo, color o talle...">
+      <datalist id="mItemDatalist"></datalist>
+      <input type="hidden" id="mItem">
     </div>
     <div class="field">
       <label>Nota (opcional)</label>
@@ -677,8 +748,10 @@ const storage = {
 };
 
 let items = [];
+let itemsJK = [];
 let moves = [];
 let editingId = null;
+let editingDeposito = 'gallegos';
 
 const $ = (id) => document.getElementById(id);
 
@@ -707,6 +780,24 @@ async function loadData(){
     await saveItems();
   }
 
+  const jkRaw = await tryGetRaw('itemsJK');
+  if(jkRaw){
+    try{ itemsJK = JSON.parse(jkRaw); }catch(e){ itemsJK = null; }
+  }
+  if(!jkRaw || !Array.isArray(itemsJK)){
+    // Depósito JK arranca con el mismo catálogo que Gallegos, en cero: el stock se carga por movimientos.
+    itemsJK = items.map(i => ({
+      id: 'jk' + uid(),
+      modelo: i.modelo,
+      color: i.color,
+      talle: i.talle,
+      codigoBarras: i.codigoBarras,
+      cantidad: 0,
+      minimo: 0
+    }));
+    await saveItemsJK();
+  }
+
   const movesRaw = await tryGetRaw('movimientos');
   moves = movesRaw ? JSON.parse(movesRaw) : [];
   render();
@@ -716,6 +807,10 @@ async function saveItems(){
   try{ storage.set('items', JSON.stringify(items)); }
   catch(e){ console.error('Error guardando items', e); }
 }
+async function saveItemsJK(){
+  try{ storage.set('itemsJK', JSON.stringify(itemsJK)); }
+  catch(e){ console.error('Error guardando itemsJK', e); }
+}
 async function saveMoves(){
   try{ storage.set('movimientos', JSON.stringify(moves)); }
   catch(e){ console.error('Error guardando movimientos', e); }
@@ -723,33 +818,38 @@ async function saveMoves(){
 
 function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
 
+const IDS_GALLEGOS = { search:'searchInput', modelo:'filterModelo', color:'filterColor', talle:'filterTalle', list:'itemsList' };
+const IDS_JK = { search:'searchInputJK', modelo:'filterModeloJK', color:'filterColorJK', talle:'filterTalleJK', list:'jkList' };
+
 function render(){
-  renderFilterOptions();
+  renderFilterOptionsFor(items, IDS_GALLEGOS);
+  renderFilterOptionsFor(itemsJK, IDS_JK);
   renderItems();
+  renderItemsJK();
   renderStats();
   renderLowStock();
   renderMoves();
   renderMoveItemSelect();
 }
 
-function renderFilterOptions(){
+function renderFilterOptionsFor(arr, ids){
   const buildOptions = (selId, placeholder, values) => {
     const sel = $(selId);
     const current = sel.value;
     sel.innerHTML = `<option value="">${placeholder}</option>` + values.map(v => `<option value="${v}">${v}</option>`).join('');
     sel.value = values.includes(current) ? current : '';
   };
-  buildOptions('filterModelo', 'Modelo', [...new Set(items.map(i => i.modelo))].sort());
-  buildOptions('filterColor', 'Color', [...new Set(items.map(i => i.color))].sort());
-  buildOptions('filterTalle', 'Talle', [...new Set(items.map(i => i.talle))].sort());
+  buildOptions(ids.modelo, 'Modelo', [...new Set(arr.map(i => i.modelo))].sort());
+  buildOptions(ids.color, 'Color', [...new Set(arr.map(i => i.color))].sort());
+  buildOptions(ids.talle, 'Talle', [...new Set(arr.map(i => i.talle))].sort());
 }
 
-function filteredItems(){
-  const q = $('searchInput').value.trim().toLowerCase();
-  const modeloFilter = $('filterModelo').value;
-  const colorFilter = $('filterColor').value;
-  const talleFilter = $('filterTalle').value;
-  return items.filter(i => {
+function filterArray(arr, ids){
+  const q = $(ids.search).value.trim().toLowerCase();
+  const modeloFilter = $(ids.modelo).value;
+  const colorFilter = $(ids.color).value;
+  const talleFilter = $(ids.talle).value;
+  return arr.filter(i => {
     const textoBase = `${i.modelo} ${i.color} ${i.talle}`.toLowerCase();
     const codigo = (i.codigoBarras || '').toLowerCase();
     const codigoCoincide = codigo && (q.startsWith(codigo) || codigo.includes(q));
@@ -761,7 +861,7 @@ function filteredItems(){
   });
 }
 
-function itemRowHtml(i){
+function itemRowHtml(i, dep){
   const low = i.cantidad <= i.minimo;
   return `
     <div class="inv-row ${low ? 'low' : ''}">
@@ -772,20 +872,26 @@ function itemRowHtml(i){
       </div>
       <div class="inv-qty">${i.cantidad}</div>
       <div class="inv-row-actions">
-        <button class="inv-icon" title="Editar" onclick="openEditItem('${i.id}')">✎</button>
-        <button class="inv-icon" title="Eliminar" onclick="deleteItem('${i.id}')">✕</button>
+        <button class="inv-icon" title="Editar" onclick="openEditItem('${i.id}','${dep}')">✎</button>
+        <button class="inv-icon" title="Eliminar" onclick="deleteItem('${i.id}','${dep}')">✕</button>
       </div>
     </div>`;
 }
 
-function renderItems(){
-  const list = $('itemsList');
-  const data = filteredItems();
-  if(data.length === 0){
-    list.innerHTML = `<div class="inv-empty">Sin resultados. Agregá una suela nueva o ajustá los filtros.</div>`;
+function renderListInto(arr, listId, dep, emptyMsg){
+  const list = $(listId);
+  if(arr.length === 0){
+    list.innerHTML = `<div class="inv-empty">${emptyMsg}</div>`;
     return;
   }
-  list.innerHTML = data.map(itemRowHtml).join('');
+  list.innerHTML = arr.map(i => itemRowHtml(i, dep)).join('');
+}
+
+function renderItems(){
+  renderListInto(filterArray(items, IDS_GALLEGOS), 'itemsList', 'gallegos', 'Sin resultados. Agregá una suela nueva o ajustá los filtros.');
+}
+function renderItemsJK(){
+  renderListInto(filterArray(itemsJK, IDS_JK), 'jkList', 'jk', 'Sin resultados. Agregá una suela nueva o ajustá los filtros.');
 }
 
 function renderStats(){
@@ -811,7 +917,7 @@ function renderLowStock(){
     list.innerHTML = `<div class="inv-empty">Ninguna suela está por debajo de su stock mínimo. 🎉</div>`;
     return;
   }
-  list.innerHTML = data.map(itemRowHtml).join('');
+  list.innerHTML = data.map(i => itemRowHtml(i, 'gallegos')).join('');
 }
 
 function renderMoves(){
@@ -822,29 +928,51 @@ function renderMoves(){
   }
   const sorted = [...moves].sort((a,b) => b.ts - a.ts);
   list.innerHTML = sorted.map(m => {
-    const item = items.find(i => i.id === m.itemId);
+    const dep = m.deposito || 'gallegos';
+    const arr = dep === 'jk' ? itemsJK : items;
+    const item = arr.find(i => i.id === m.itemId);
     const desc = item ? `${item.modelo} ${item.color} T${item.talle}` : '(eliminado)';
+    const depLabel = dep === 'jk' ? 'JK' : 'Gallegos';
     return `
     <div class="move-row">
       <span class="move-tag ${m.tipo}">${m.tipo === 'entrada' ? '↑ Entrada' : '↓ Salida'}</span>
-      <span class="move-desc"><b>${m.cantidad}</b> — ${desc}${m.nota ? ' · ' + m.nota : ''}</span>
+      <span class="move-desc"><b>${m.cantidad}</b> — ${desc}${m.nota ? ' · ' + m.nota : ''} <span style="color:var(--paper-dim); font-family:'JetBrains Mono', monospace; font-size:10px;">· ${depLabel}</span></span>
       <span class="move-date">${m.fecha}</span>
     </div>`;
   }).join('');
 }
 
-function renderMoveItemSelect(){
-  const sel = $('mItem');
-  sel.innerHTML = items.map(i => `<option value="${i.id}">${i.modelo} — ${i.color} — Talle ${i.talle} (stock: ${i.cantidad})</option>`).join('');
+let mItemMap = {};
+function labelDeItem(i){
+  return `${i.modelo} — ${i.color} — Talle ${i.talle} (stock: ${i.cantidad})`;
 }
+function renderMoveItemSelect(){
+  const dep = $('mDeposito').value || 'gallegos';
+  const arr = dep === 'jk' ? itemsJK : items;
+  mItemMap = {};
+  $('mItemDatalist').innerHTML = arr.map(i => {
+    const label = labelDeItem(i);
+    mItemMap[label] = i.id;
+    return `<option value="${label}"></option>`;
+  }).join('');
+  $('mItemInput').value = '';
+  $('mItem').value = '';
+}
+$('mDeposito').addEventListener('change', renderMoveItemSelect);
+$('mItemInput').addEventListener('input', () => {
+  $('mItem').value = mItemMap[$('mItemInput').value] || '';
+});
 
 /* ---------- TABS ---------- */
+let depositoActivo = 'gallegos';
 function switchTab(tab){
   document.querySelectorAll('.tabbtn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
   $('tab-inv').style.display = tab === 'inv' ? 'block' : 'none';
+  $('tab-jk').style.display = tab === 'jk' ? 'block' : 'none';
   $('tab-mov').style.display = tab === 'mov' ? 'block' : 'none';
   $('tab-low').style.display = tab === 'low' ? 'block' : 'none';
   if(tab === 'low') renderLowStock();
+  if(tab === 'inv' || tab === 'jk') depositoActivo = tab === 'jk' ? 'jk' : 'gallegos';
 }
 document.querySelectorAll('.tabbtn').forEach(btn => {
   btn.addEventListener('click', () => switchTab(btn.dataset.tab));
@@ -856,12 +984,20 @@ $('searchInput').addEventListener('input', renderItems);
 $('filterModelo').addEventListener('change', renderItems);
 $('filterColor').addEventListener('change', renderItems);
 $('filterTalle').addEventListener('change', renderItems);
+$('searchInputJK').addEventListener('input', renderItemsJK);
+$('filterModeloJK').addEventListener('change', renderItemsJK);
+$('filterColorJK').addEventListener('change', renderItemsJK);
+$('filterTalleJK').addEventListener('change', renderItemsJK);
 $('lowSearchInput').addEventListener('input', renderLowStock);
 
 /* ---------- ITEM MODAL ---------- */
-function openAddItemModal(){
+function arrayDeDeposito(dep){ return dep === 'jk' ? itemsJK : items; }
+function saveDeposito(dep){ return dep === 'jk' ? saveItemsJK() : saveItems(); }
+
+function openAddItemModal(dep){
   editingId = null;
-  $('itemModalTitle').textContent = 'Nueva suela';
+  editingDeposito = dep;
+  $('itemModalTitle').textContent = dep === 'jk' ? 'Nueva suela — Depósito JK' : 'Nueva suela — Depósito Gallegos';
   $('fModelo').value = '';
   $('fColor').value = '';
   $('fTalle').value = '';
@@ -871,11 +1007,12 @@ function openAddItemModal(){
   $('itemErr').classList.remove('show');
   $('itemOverlay').classList.add('show');
 }
-window.openEditItem = function(id){
-  const item = items.find(i => i.id === id);
+window.openEditItem = function(id, dep){
+  const item = arrayDeDeposito(dep).find(i => i.id === id);
   if(!item) return;
   editingId = id;
-  $('itemModalTitle').textContent = 'Editar suela';
+  editingDeposito = dep;
+  $('itemModalTitle').textContent = dep === 'jk' ? 'Editar suela — Depósito JK' : 'Editar suela — Depósito Gallegos';
   $('fModelo').value = item.modelo;
   $('fColor').value = item.color;
   $('fTalle').value = item.talle;
@@ -885,13 +1022,14 @@ window.openEditItem = function(id){
   $('itemErr').classList.remove('show');
   $('itemOverlay').classList.add('show');
 };
-window.deleteItem = function(id){
-  if(!confirm('¿Eliminar esta suela del inventario?')) return;
-  items = items.filter(i => i.id !== id);
-  saveItems();
+window.deleteItem = function(id, dep){
+  if(!confirm('¿Eliminar esta suela del depósito?')) return;
+  if(dep === 'jk'){ itemsJK = itemsJK.filter(i => i.id !== id); saveItemsJK(); }
+  else { items = items.filter(i => i.id !== id); saveItems(); }
   render();
 };
-$('openAddItem').addEventListener('click', openAddItemModal);
+$('openAddItem').addEventListener('click', () => openAddItemModal('gallegos'));
+$('openAddItemJK').addEventListener('click', () => openAddItemModal('jk'));
 $('cancelItem').addEventListener('click', () => $('itemOverlay').classList.remove('show'));
 
 $('saveItem').addEventListener('click', async () => {
@@ -909,22 +1047,25 @@ $('saveItem').addEventListener('click', async () => {
   }
 
   if(editingId){
-    const item = items.find(i => i.id === editingId);
+    const item = arrayDeDeposito(editingDeposito).find(i => i.id === editingId);
     Object.assign(item, { modelo, color, talle, codigoBarras, cantidad, minimo });
+  } else if(editingDeposito === 'jk'){
+    itemsJK.push({ id: uid(), modelo, color, talle, codigoBarras, cantidad, minimo });
   } else {
     items.push({ id: uid(), modelo, color, talle, codigoBarras, cantidad, minimo });
   }
-  await saveItems();
+  await saveDeposito(editingDeposito);
   $('itemOverlay').classList.remove('show');
   render();
 });
 
 /* ---------- MOVE MODAL ---------- */
 $('openMove').addEventListener('click', () => {
-  if(items.length === 0){
-    alert('Primero agregá al menos una suela al inventario.');
+  if(items.length === 0 && itemsJK.length === 0){
+    alert('Primero agregá al menos una suela a algún depósito.');
     return;
   }
+  $('mDeposito').value = depositoActivo;
   $('mTipo').value = 'entrada';
   $('mCantidad').value = 1;
   $('mNota').value = '';
@@ -935,11 +1076,13 @@ $('openMove').addEventListener('click', () => {
 $('cancelMove').addEventListener('click', () => { closeScanner(); $('moveOverlay').classList.remove('show'); });
 
 $('saveMove').addEventListener('click', async () => {
+  const dep = $('mDeposito').value;
+  const arr = dep === 'jk' ? itemsJK : items;
   const itemId = $('mItem').value;
   const tipo = $('mTipo').value;
   const cantidad = parseInt($('mCantidad').value, 10);
   const nota = $('mNota').value.trim();
-  const item = items.find(i => i.id === itemId);
+  const item = arr.find(i => i.id === itemId);
 
   if(!item || isNaN(cantidad) || cantidad <= 0){
     $('moveErr').textContent = 'Elegí una suela y una cantidad válida.';
@@ -953,9 +1096,9 @@ $('saveMove').addEventListener('click', async () => {
   }
 
   item.cantidad += tipo === 'entrada' ? cantidad : -cantidad;
-  moves.push({ id: uid(), itemId, tipo, cantidad, nota, fecha: todayStr(), ts: Date.now() });
+  moves.push({ id: uid(), itemId, deposito: dep, tipo, cantidad, nota, fecha: todayStr(), ts: Date.now() });
 
-  await saveItems();
+  await saveDeposito(dep);
   await saveMoves();
   $('moveOverlay').classList.remove('show');
   render();
@@ -1007,7 +1150,7 @@ async function openScanner(target){
   scanPaused = false;
   ensureAudioCtx();
   $('scanStatus').textContent = target === 'movimiento'
-    ? 'Escaneá cada suela: se suma o resta sola del inventario.'
+    ? `Escaneá cada suela: se suma o resta sola del Depósito ${$('mDeposito').value === 'jk' ? 'JK' : 'Gallegos'}.`
     : 'Apuntá la cámara al código de barras...';
   $('scanFeedback').classList.remove('show', 'ok', 'bad');
   $('scanOverlay').classList.add('show');
@@ -1038,10 +1181,10 @@ async function openScanner(target){
   }
 }
 
-function encontrarItemPorCodigo(code){
+function encontrarItemPorCodigo(code, arr){
   if(!code) return null;
   let mejor = null;
-  for(const it of items){
+  for(const it of arr){
     if(it.codigoBarras && code.startsWith(it.codigoBarras)){
       if(!mejor || it.codigoBarras.length > mejor.codigoBarras.length) mejor = it;
     }
@@ -1057,9 +1200,13 @@ function handleScanResult(code){
   beep(true);
   closeScanner();
   if(scanTarget === 'search'){
-    const match = encontrarItemPorCodigo(code);
+    const match = encontrarItemPorCodigo(code, items);
     $('searchInput').value = match ? match.codigoBarras : code;
     renderItems();
+  } else if(scanTarget === 'searchJK'){
+    const match = encontrarItemPorCodigo(code, itemsJK);
+    $('searchInputJK').value = match ? match.codigoBarras : code;
+    renderItemsJK();
   } else if(scanTarget === 'fCodigo'){
     $('fCodigo').value = code;
   }
@@ -1068,23 +1215,26 @@ function handleScanResult(code){
 async function applyMovementScan(code){
   scanPaused = true; // evita leer el mismo código varias veces seguidas
 
-  const item = encontrarItemPorCodigo(code);
+  const dep = $('mDeposito').value;
+  const arr = dep === 'jk' ? itemsJK : items;
+  const item = encontrarItemPorCodigo(code, arr);
   const tipo = $('mTipo').value;
   const cantidad = parseInt($('mCantidad').value, 10) || 1;
 
   if(!item){
     beep(false);
-    scanFeedback(`✕ Código sin coincidencia en el inventario: ${code}`, false);
+    scanFeedback(`✕ Código sin coincidencia en el Depósito ${dep === 'jk' ? 'JK' : 'Gallegos'}: ${code}`, false);
   } else if(tipo === 'salida' && cantidad > item.cantidad){
     beep(false);
     scanFeedback(`✕ Stock insuficiente de ${item.modelo} ${item.color} T${item.talle} (disponible: ${item.cantidad})`, false);
   } else {
     item.cantidad += tipo === 'entrada' ? cantidad : -cantidad;
-    moves.push({ id: uid(), itemId: item.id, tipo, cantidad, nota: '', fecha: todayStr(), ts: Date.now() });
-    await saveItems();
+    moves.push({ id: uid(), itemId: item.id, deposito: dep, tipo, cantidad, nota: '', fecha: todayStr(), ts: Date.now() });
+    await saveDeposito(dep);
     await saveMoves();
     render();
     $('mItem').value = item.id;
+    $('mItemInput').value = labelDeItem(item);
     beep(true);
     scanFeedback(`✓ ${tipo === 'entrada' ? 'Entrada' : 'Salida'} aplicada: ${item.modelo} ${item.color} T${item.talle} (${tipo === 'entrada' ? '+' : '-'}${cantidad})`, true);
   }
@@ -1112,10 +1262,13 @@ function closeScanner(){
 }
 
 $('scanSearchBtn').addEventListener('click', () => openScanner('search'));
+$('scanSearchBtnJK').addEventListener('click', () => openScanner('searchJK'));
 $('scanCodigoBtn').addEventListener('click', () => openScanner('fCodigo'));
 $('openMoveScan').addEventListener('click', () => {
-  if(items.length === 0){
-    alert('Primero agregá al menos una suela al inventario.');
+  const dep = $('mDeposito').value;
+  const arr = dep === 'jk' ? itemsJK : items;
+  if(arr.length === 0){
+    alert(`El Depósito ${dep === 'jk' ? 'JK' : 'Gallegos'} todavía no tiene suelas cargadas.`);
     return;
   }
   openScanner('movimiento');
@@ -1143,7 +1296,13 @@ function buscarColumna(headerKeys, tipo){
   return null;
 }
 
-$('importExcelBtn').addEventListener('click', () => $('importExcelFile').click());
+let importTargetDep = 'gallegos';
+$('importExcelBtn').addEventListener('click', () => {
+  closeMenu();
+  const esGallegos = confirm('¿A qué depósito vas a importar este Excel?\n\nAceptar = Depósito Gallegos.\nCancelar = Depósito JK.');
+  importTargetDep = esGallegos ? 'gallegos' : 'jk';
+  $('importExcelFile').click();
+});
 
 $('importExcelFile').addEventListener('change', (e) => {
   const file = e.target.files[0];
@@ -1190,15 +1349,18 @@ $('importExcelFile').addEventListener('change', (e) => {
         return;
       }
 
-      const reemplazar = confirm(`Se encontraron ${parsed.length} filas válidas.\n\nAceptar = REEMPLAZAR todo el inventario actual por estos datos.\nCancelar = elegir sumarlos al inventario existente en el siguiente paso.`);
+      const depNombre = importTargetDep === 'jk' ? 'Depósito JK' : 'Depósito Gallegos';
+      const reemplazar = confirm(`Se encontraron ${parsed.length} filas válidas para ${depNombre}.\n\nAceptar = REEMPLAZAR todo ese depósito por estos datos.\nCancelar = elegir sumarlos al depósito existente en el siguiente paso.`);
+
+      let arr = importTargetDep === 'jk' ? itemsJK : items;
 
       if(reemplazar){
-        items = parsed.map(p => ({ id: uid(), ...p }));
+        arr = parsed.map(p => ({ id: uid(), ...p }));
       } else {
-        const sumar = confirm('¿Sumar estas filas al inventario existente?\n\nSi una suela con el mismo modelo, color y talle ya existe, se suma la cantidad. Si no existe, se agrega nueva.\n\nCancelar aborta la importación sin cambiar nada.');
+        const sumar = confirm('¿Sumar estas filas al depósito existente?\n\nSi una suela con el mismo modelo, color y talle ya existe, se suma la cantidad. Si no existe, se agrega nueva.\n\nCancelar aborta la importación sin cambiar nada.');
         if(!sumar) return;
         parsed.forEach(p => {
-          const existente = items.find(i =>
+          const existente = arr.find(i =>
             i.modelo.toLowerCase() === p.modelo.toLowerCase() &&
             i.color.toLowerCase() === p.color.toLowerCase() &&
             i.talle.toLowerCase() === p.talle.toLowerCase()
@@ -1207,14 +1369,15 @@ $('importExcelFile').addEventListener('change', (e) => {
             existente.cantidad += p.cantidad;
             if(!existente.codigoBarras && p.codigoBarras) existente.codigoBarras = p.codigoBarras;
           } else {
-            items.push({ id: uid(), ...p });
+            arr.push({ id: uid(), ...p });
           }
         });
       }
 
-      await saveItems();
+      if(importTargetDep === 'jk'){ itemsJK = arr; await saveItemsJK(); }
+      else { items = arr; await saveItems(); }
       render();
-      alert(`Importación completa: ${parsed.length} filas procesadas.`);
+      alert(`Importación completa: ${parsed.length} filas procesadas en ${depNombre}.`);
     }catch(err){
       alert('No se pudo leer el archivo. Verificá que sea un .xlsx válido con el formato indicado.');
     }
@@ -1225,9 +1388,11 @@ $('importExcelFile').addEventListener('change', (e) => {
 
 /* ---------- BACKUP / RESTAURAR (para mover datos entre celular y PC) ---------- */
 $('backupData').addEventListener('click', () => {
+  closeMenu();
   const backup = {
     exportado: new Date().toISOString(),
     items,
+    itemsJK,
     moves
   };
   const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
@@ -1241,7 +1406,7 @@ $('backupData').addEventListener('click', () => {
   URL.revokeObjectURL(url);
 });
 
-$('restoreData').addEventListener('click', () => $('restoreFile').click());
+$('restoreData').addEventListener('click', () => { closeMenu(); $('restoreFile').click(); });
 
 $('restoreFile').addEventListener('change', (e) => {
   const file = e.target.files[0];
@@ -1255,12 +1420,15 @@ $('restoreFile').addEventListener('change', (e) => {
         return;
       }
       const cantidadItems = data.items.length;
+      const cantidadJK = Array.isArray(data.itemsJK) ? data.itemsJK.length : 0;
       const cantidadMovs = Array.isArray(data.moves) ? data.moves.length : 0;
-      const ok = confirm(`Este backup tiene ${cantidadItems} suelas y ${cantidadMovs} movimientos.\n\nEsto va a REEMPLAZAR todo lo que tenés cargado en este dispositivo ahora mismo. ¿Continuar?`);
+      const ok = confirm(`Este backup tiene ${cantidadItems} suelas en Gallegos, ${cantidadJK} en JK y ${cantidadMovs} movimientos.\n\nEsto va a REEMPLAZAR todo lo que tenés cargado en este dispositivo ahora mismo. ¿Continuar?`);
       if(!ok) return;
       items = data.items;
+      if(Array.isArray(data.itemsJK)) itemsJK = data.itemsJK;
       moves = Array.isArray(data.moves) ? data.moves : [];
       await saveItems();
+      await saveItemsJK();
       await saveMoves();
       render();
       alert('Backup restaurado correctamente.');
@@ -1274,11 +1442,15 @@ $('restoreFile').addEventListener('change', (e) => {
 
 /* ---------- EXPORT EXCEL ---------- */
 $('exportExcel').addEventListener('click', () => {
-  if(items.length === 0){
-    alert('No hay suelas cargadas todavía.');
+  closeMenu();
+  const esGallegos = confirm('¿Qué depósito querés exportar a Excel?\n\nAceptar = Depósito Gallegos.\nCancelar = Depósito JK.');
+  const arr = esGallegos ? items : itemsJK;
+  const nombreDep = esGallegos ? 'gallegos' : 'jk';
+  if(arr.length === 0){
+    alert('Ese depósito no tiene suelas cargadas todavía.');
     return;
   }
-  const rows = items.map(i => ({
+  const rows = arr.map(i => ({
     'Modelo': i.modelo,
     'Color': i.color,
     'Talle': i.talle,
@@ -1292,8 +1464,17 @@ $('exportExcel').addEventListener('click', () => {
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Inventario');
   const fecha = new Date().toISOString().slice(0,10);
-  XLSX.writeFile(wb, `inventario-suelas-${fecha}.xlsx`);
+  XLSX.writeFile(wb, `inventario-${nombreDep}-${fecha}.xlsx`);
 });
+
+/* ---------- MENÚ DE TRES PUNTITOS ---------- */
+function closeMenu(){ $('menuDropdown').classList.remove('show'); }
+$('menuToggle').addEventListener('click', (e) => {
+  e.stopPropagation();
+  $('menuDropdown').classList.toggle('show');
+});
+document.querySelector('.menu-wrap').addEventListener('click', (e) => e.stopPropagation());
+document.addEventListener('click', closeMenu);
 
 /* close modals on backdrop click */
 [$('itemOverlay'), $('moveOverlay')].forEach(ov => {
