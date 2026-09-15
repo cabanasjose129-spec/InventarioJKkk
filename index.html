@@ -791,9 +791,13 @@ input:focus, select:focus{ border-color: var(--amber); }
 <!-- MODAL: escanear código de barras -->
 <div class="overlay" id="scanOverlay">
   <div class="modal scan-modal">
-    <div style="display:flex; align-items:center; justify-content:space-between;">
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:6px;">
       <h2 style="margin-bottom:0;">Escanear c&oacute;digo</h2>
-      <button type="button" id="scanSettingsBtn" title="Configurar largo del código base" style="background:none; border:1px solid #cabf9f; border-radius:6px; width:30px; height:30px; cursor:pointer; font-size:14px;">⚙️</button>
+      <div style="display:flex; gap:6px;">
+        <button type="button" id="flashBtn" title="Activar/desactivar flash" style="display:none; background:none; border:1px solid #cabf9f; border-radius:6px; width:30px; height:30px; cursor:pointer; font-size:14px;">🔦</button>
+        <button type="button" id="switchCamBtn" title="Cambiar cámara" style="display:none; background:none; border:1px solid #cabf9f; border-radius:6px; width:30px; height:30px; cursor:pointer; font-size:14px;">🔄</button>
+        <button type="button" id="scanSettingsBtn" title="Configurar largo del código base" style="background:none; border:1px solid #cabf9f; border-radius:6px; width:30px; height:30px; cursor:pointer; font-size:14px;">⚙️</button>
+      </div>
     </div>
     <div class="scan-frame" style="margin-top:12px;">
       <video id="scanVideo" autoplay playsinline muted></video>
@@ -1281,6 +1285,46 @@ function beep(ok){
   }
 }
 
+let camarasDisponibles = [];
+let camaraIndexActual = 0;
+let torchActivo = false;
+
+function guardarCamaraPreferida(deviceId){
+  try{ localStorage.setItem('inv_suelas_camera_id', deviceId); }catch(e){ /* sin acceso a localStorage */ }
+}
+function leerCamaraPreferida(){
+  try{ return localStorage.getItem('inv_suelas_camera_id'); }catch(e){ return null; }
+}
+async function listarCamaras(){
+  try{
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    camarasDisponibles = devices.filter(d => d.kind === 'videoinput');
+  }catch(e){ camarasDisponibles = []; }
+}
+
+async function iniciarStream(constraints){
+  if(scanStream){
+    scanStream.getTracks().forEach(t => t.stop());
+    scanStream = null;
+  }
+  scanStream = await navigator.mediaDevices.getUserMedia(constraints);
+  const video = $('scanVideo');
+  video.srcObject = scanStream;
+  await video.play();
+
+  torchActivo = false;
+  $('flashBtn').style.background = 'none';
+  let soportaFlash = false;
+  try{
+    const track = scanStream.getVideoTracks()[0];
+    const caps = track.getCapabilities ? track.getCapabilities() : {};
+    soportaFlash = !!caps.torch;
+  }catch(e){ soportaFlash = false; }
+  $('flashBtn').style.display = soportaFlash ? 'flex' : 'none';
+  $('flashBtn').style.alignItems = 'center';
+  $('flashBtn').style.justifyContent = 'center';
+}
+
 async function openScanner(target){
   scanTarget = target;
   scanPaused = false;
@@ -1296,16 +1340,27 @@ async function openScanner(target){
     return;
   }
   try{
-    scanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-    const video = $('scanVideo');
-    video.srcObject = scanStream;
-    await video.play();
+    await listarCamaras();
+    const preferida = leerCamaraPreferida();
+    let constraints;
+    if(preferida && camarasDisponibles.some(c => c.deviceId === preferida)){
+      constraints = { video: { deviceId: { exact: preferida } } };
+      camaraIndexActual = camarasDisponibles.findIndex(c => c.deviceId === preferida);
+    } else {
+      constraints = { video: { facingMode: 'environment' } };
+    }
+    await iniciarStream(constraints);
+    await listarCamaras(); // ahora hay permiso, así que ya trae los nombres de cada cámara
+    $('switchCamBtn').style.display = camarasDisponibles.length > 1 ? 'flex' : 'none';
+    $('switchCamBtn').style.alignItems = 'center';
+    $('switchCamBtn').style.justifyContent = 'center';
+
     const detector = new BarcodeDetector({ formats: ['ean_13','ean_8','upc_a','upc_e','code_128','code_39','itf','codabar'] });
     const tick = async () => {
       if(!scanStream) return;
       if(!scanPaused){
         try{
-          const codes = await detector.detect(video);
+          const codes = await detector.detect($('scanVideo'));
           if(codes.length > 0){ handleScanResult(codes[0].rawValue); }
         }catch(e){ /* frame sin datos válidos, seguir intentando */ }
       }
@@ -1389,12 +1444,41 @@ function closeScanner(){
   if(scanRAF) cancelAnimationFrame(scanRAF);
   scanRAF = null;
   scanPaused = false;
+  torchActivo = false;
+  $('flashBtn').style.background = 'none';
   if(scanStream){
     scanStream.getTracks().forEach(t => t.stop());
     scanStream = null;
   }
   $('scanOverlay').classList.remove('show');
 }
+
+$('switchCamBtn').addEventListener('click', async () => {
+  if(camarasDisponibles.length < 2) return;
+  camaraIndexActual = (camaraIndexActual + 1) % camarasDisponibles.length;
+  const elegida = camarasDisponibles[camaraIndexActual];
+  guardarCamaraPreferida(elegida.deviceId);
+  try{
+    await iniciarStream({ video: { deviceId: { exact: elegida.deviceId } } });
+    $('scanStatus').textContent = elegida.label ? `Cámara cambiada: ${elegida.label}` : 'Cámara cambiada.';
+  }catch(e){
+    $('scanStatus').textContent = 'No se pudo cambiar de cámara.';
+  }
+});
+
+$('flashBtn').addEventListener('click', async () => {
+  if(!scanStream) return;
+  const track = scanStream.getVideoTracks()[0];
+  if(!track) return;
+  const nuevoEstado = !torchActivo;
+  try{
+    await track.applyConstraints({ advanced: [{ torch: nuevoEstado }] });
+    torchActivo = nuevoEstado;
+    $('flashBtn').style.background = torchActivo ? 'var(--amber)' : 'none';
+  }catch(e){
+    $('scanStatus').textContent = 'No se pudo activar el flash en este dispositivo.';
+  }
+});
 
 $('scanSearchBtn').addEventListener('click', () => openScanner('search'));
 $('scanSearchBtnJK').addEventListener('click', () => openScanner('searchJK'));
