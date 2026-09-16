@@ -818,7 +818,7 @@ input:focus, select:focus{ border-color: var(--amber); }
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
   import {
     getFirestore, doc, getDoc, setDoc, onSnapshot,
-    collection, addDoc, query, orderBy, limit
+    collection, addDoc, query, orderBy, limit, runTransaction
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -839,7 +839,7 @@ input:focus, select:focus{ border-color: var(--amber); }
     signInWithEmailAndPassword, onAuthStateChanged, signOut,
     setPersistence, browserLocalPersistence,
     doc, getDoc, setDoc, onSnapshot,
-    collection, addDoc, query, orderBy, limit
+    collection, addDoc, query, orderBy, limit, runTransaction
   };
   window.fbReady = true;
   window.dispatchEvent(new Event('firebase-ready'));
@@ -882,6 +882,37 @@ async function saveItemsJK(){
 async function addMovimiento(mov){
   try{ await window.fb.addDoc(window.fb.collection(window.fb.db, 'movimientos'), mov); }
   catch(e){ console.error('Error guardando movimiento', e); }
+}
+
+// Lee la lista más actual de Firestore DENTRO de la transacción (no la copia local, que puede estar
+// un instante desactualizada), aplica el cambio, y lo guarda — evita que dos cargas casi simultáneas
+// se pisen entre sí.
+async function actualizarArrayDeposito(dep, mutarArray){
+  const ref = window.fb.doc(window.fb.db, 'depositos', dep === 'jk' ? 'jk' : 'gallegos');
+  await window.fb.runTransaction(window.fb.db, async (tx) => {
+    const snap = await tx.get(ref);
+    const arr = snap.exists() ? (snap.data().items || []) : [];
+    const nuevoArr = mutarArray(arr);
+    tx.set(ref, { items: nuevoArr });
+  });
+}
+
+// mutarItem recibe una copia fresca del artículo y devuelve la versión modificada,
+// o null para cancelar sin guardar nada (por ejemplo, si no hay stock suficiente).
+async function actualizarItemPorId(dep, itemId, mutarItem){
+  let itemFinal = null;
+  let cancelado = false;
+  await actualizarArrayDeposito(dep, (arr) => {
+    const idx = arr.findIndex(i => i.id === itemId);
+    if(idx === -1){ cancelado = true; return arr; }
+    const resultado = mutarItem({ ...arr[idx] });
+    if(resultado === null){ cancelado = true; return arr; }
+    const copia = [...arr];
+    copia[idx] = resultado;
+    itemFinal = resultado;
+    return copia;
+  });
+  return { cancelado, item: itemFinal };
 }
 
 async function iniciarApp(){
@@ -1133,7 +1164,6 @@ $('lowSearchInput').addEventListener('input', renderLowStock);
 
 /* ---------- ITEM MODAL ---------- */
 function arrayDeDeposito(dep){ return dep === 'jk' ? itemsJK : items; }
-function saveDeposito(dep){ return dep === 'jk' ? saveItemsJK() : saveItems(); }
 
 function openAddItemModal(dep){
   editingId = null;
@@ -1163,11 +1193,13 @@ window.openEditItem = function(id, dep){
   $('itemErr').classList.remove('show');
   $('itemOverlay').classList.add('show');
 };
-window.deleteItem = function(id, dep){
+window.deleteItem = async function(id, dep){
   if(!confirm('¿Eliminar esta suela del depósito?')) return;
-  if(dep === 'jk'){ itemsJK = itemsJK.filter(i => i.id !== id); saveItemsJK(); }
-  else { items = items.filter(i => i.id !== id); saveItems(); }
-  render();
+  try{
+    await actualizarArrayDeposito(dep, (arr) => arr.filter(i => i.id !== id));
+  }catch(e){
+    alert('No se pudo eliminar. Probá de nuevo.');
+  }
 };
 $('openAddItem').addEventListener('click', () => openAddItemModal('gallegos'));
 $('openAddItemJK').addEventListener('click', () => openAddItemModal('jk'));
@@ -1187,15 +1219,22 @@ $('saveItem').addEventListener('click', async () => {
     return;
   }
 
-  if(editingId){
-    const item = arrayDeDeposito(editingDeposito).find(i => i.id === editingId);
-    Object.assign(item, { modelo, color, talle, codigoBarras, cantidad, minimo });
-  } else if(editingDeposito === 'jk'){
-    itemsJK.push({ id: uid(), modelo, color, talle, codigoBarras, cantidad, minimo });
-  } else {
-    items.push({ id: uid(), modelo, color, talle, codigoBarras, cantidad, minimo });
+  try{
+    await actualizarArrayDeposito(editingDeposito, (arr) => {
+      if(editingId){
+        const idx = arr.findIndex(i => i.id === editingId);
+        if(idx === -1) return arr;
+        const copia = [...arr];
+        copia[idx] = { ...copia[idx], modelo, color, talle, codigoBarras, cantidad, minimo };
+        return copia;
+      }
+      return [...arr, { id: uid(), modelo, color, talle, codigoBarras, cantidad, minimo }];
+    });
+  }catch(e){
+    $('itemErr').textContent = 'Error al guardar en la base. Probá de nuevo.';
+    $('itemErr').classList.add('show');
+    return;
   }
-  await saveDeposito(editingDeposito);
   $('itemOverlay').classList.remove('show');
   render();
 });
@@ -1230,18 +1269,25 @@ $('saveMove').addEventListener('click', async () => {
     $('moveErr').classList.add('show');
     return;
   }
-  if(tipo === 'salida' && cantidad > item.cantidad){
-    $('moveErr').textContent = `No hay stock suficiente (disponible: ${item.cantidad}).`;
+
+  try{
+    const resultado = await actualizarItemPorId(dep, itemId, (it) => {
+      const nuevaCantidad = it.cantidad + (tipo === 'entrada' ? cantidad : -cantidad);
+      if(tipo === 'salida' && nuevaCantidad < 0) return null;
+      it.cantidad = nuevaCantidad;
+      return it;
+    });
+    if(resultado.cancelado){
+      $('moveErr').textContent = 'No hay stock suficiente para esa salida.';
+      $('moveErr').classList.add('show');
+      return;
+    }
+    await addMovimiento({ itemId, deposito: dep, tipo, cantidad, nota, fecha: todayStr(), ts: Date.now() });
+    $('moveOverlay').classList.remove('show');
+  }catch(e){
+    $('moveErr').textContent = 'Error al guardar en la base. Probá de nuevo.';
     $('moveErr').classList.add('show');
-    return;
   }
-
-  item.cantidad += tipo === 'entrada' ? cantidad : -cantidad;
-
-  await saveDeposito(dep);
-  await addMovimiento({ itemId, deposito: dep, tipo, cantidad, nota, fecha: todayStr(), ts: Date.now() });
-  $('moveOverlay').classList.remove('show');
-  render();
 });
 
 /* ---------- ESCÁNER DE CÓDIGO DE BARRAS ---------- */
@@ -1271,7 +1317,7 @@ function beep(ok){
       osc.frequency.value = freq;
       const t0 = audioCtx.currentTime + start;
       gain.gain.setValueAtTime(0.0001, t0);
-      gain.gain.exponentialRampToValueAtTime(0.25, t0 + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.9, t0 + 0.01);
       gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
       osc.start(t0);
       osc.stop(t0 + dur + 0.02);
@@ -1415,18 +1461,28 @@ async function applyMovementScan(code){
   if(!item){
     beep(false);
     scanFeedback(`✕ Código sin coincidencia en el Depósito ${dep === 'jk' ? 'JK' : 'Gallegos'}: ${code}`, false);
-  } else if(tipo === 'salida' && cantidad > item.cantidad){
-    beep(false);
-    scanFeedback(`✕ Stock insuficiente de ${item.modelo} ${item.color} T${item.talle} (disponible: ${item.cantidad})`, false);
   } else {
-    item.cantidad += tipo === 'entrada' ? cantidad : -cantidad;
-    await saveDeposito(dep);
-    await addMovimiento({ itemId: item.id, deposito: dep, tipo, cantidad, nota: '', fecha: todayStr(), ts: Date.now() });
-    render();
-    $('mItem').value = item.id;
-    $('mItemInput').value = labelDeItem(item);
-    beep(true);
-    scanFeedback(`✓ ${tipo === 'entrada' ? 'Entrada' : 'Salida'} aplicada: ${item.modelo} ${item.color} T${item.talle} (${tipo === 'entrada' ? '+' : '-'}${cantidad})`, true);
+    try{
+      const resultado = await actualizarItemPorId(dep, item.id, (it) => {
+        const nuevaCantidad = it.cantidad + (tipo === 'entrada' ? cantidad : -cantidad);
+        if(tipo === 'salida' && nuevaCantidad < 0) return null;
+        it.cantidad = nuevaCantidad;
+        return it;
+      });
+      if(resultado.cancelado){
+        beep(false);
+        scanFeedback(`✕ Stock insuficiente de ${item.modelo} ${item.color} T${item.talle}`, false);
+      } else {
+        await addMovimiento({ itemId: item.id, deposito: dep, tipo, cantidad, nota: '', fecha: todayStr(), ts: Date.now() });
+        $('mItem').value = item.id;
+        $('mItemInput').value = labelDeItem(resultado.item);
+        beep(true);
+        scanFeedback(`✓ ${tipo === 'entrada' ? 'Entrada' : 'Salida'} aplicada: ${item.modelo} ${item.color} T${item.talle} (${tipo === 'entrada' ? '+' : '-'}${cantidad})`, true);
+      }
+    }catch(e){
+      beep(false);
+      scanFeedback('✕ No se pudo guardar (revisá tu conexión) — probá de nuevo.', false);
+    }
   }
 
   setTimeout(() => { scanPaused = false; }, 1400);
