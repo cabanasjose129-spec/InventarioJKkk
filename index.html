@@ -537,25 +537,28 @@ input:focus, select:focus{ border-color: var(--amber); }
   font-size: 14px;
   font-weight: 600;
   color: var(--paper);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 .inv-meta{
   font-size: 12px;
   color: var(--paper-dim);
   margin-top: 2px;
 }
-.inv-qty{
+.inv-qty-badge{
   font-family: 'JetBrains Mono', monospace;
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--paper);
-  min-width: 40px;
-  text-align: right;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--rubber);
+  background: var(--teal);
+  padding: 2px 8px;
+  border-radius: 20px;
+  line-height: 1.5;
 }
-.inv-row.low .inv-qty{ color: var(--alert); }
-.inv-row-actions{ display: flex; gap: 2px; }
+.inv-row.low .inv-qty-badge{ background: var(--alert); color: #fff0ee; }
+.inv-row-actions{ display: flex; gap: 2px; flex-shrink: 0; }
 .inv-icon{
   width: 28px; height: 28px;
   border-radius: 6px;
@@ -682,7 +685,7 @@ input:focus, select:focus{ border-color: var(--amber); }
 
   <!-- MOVIMIENTOS -->
   <div id="tab-mov" style="display:none;">
-    <div class="toolbar">
+    <div class="toolbar" style="justify-content:flex-end;">
       <button class="btn btn-teal" id="openMove">Registrar movimiento</button>
     </div>
     <div class="moves" id="movesList"></div>
@@ -1017,12 +1020,28 @@ function renderFilterOptionsFor(arr, ids){
   buildOptions(ids.talle, 'Talle', [...new Set(arr.map(i => i.talle))].sort());
 }
 
+function compararTalle(a, b){
+  const na = parseFloat(a);
+  const nb = parseFloat(b);
+  if(!isNaN(na) && !isNaN(nb) && na !== nb) return na - nb;
+  return String(a).localeCompare(String(b), 'es', { numeric: true, sensitivity: 'base' });
+}
+function ordenarItems(arr){
+  return [...arr].sort((a, b) => {
+    const m = a.modelo.localeCompare(b.modelo, 'es', { numeric: true, sensitivity: 'base' });
+    if(m !== 0) return m;
+    const c = a.color.localeCompare(b.color, 'es', { numeric: true, sensitivity: 'base' });
+    if(c !== 0) return c;
+    return compararTalle(a.talle, b.talle);
+  });
+}
+
 function filterArray(arr, ids){
   const q = $(ids.search).value.trim().toLowerCase();
   const modeloFilter = $(ids.modelo).value;
   const colorFilter = $(ids.color).value;
   const talleFilter = $(ids.talle).value;
-  return arr.filter(i => {
+  const filtrado = arr.filter(i => {
     const textoBase = `${i.modelo} ${i.color} ${i.talle}`.toLowerCase();
     const codigo = (i.codigoBarras || '').toLowerCase();
     const codigoCoincide = codigo && (q.startsWith(codigo) || codigo.includes(q));
@@ -1032,6 +1051,7 @@ function filterArray(arr, ids){
     const matchesTalle = !talleFilter || i.talle === talleFilter;
     return matchesQ && matchesModelo && matchesColor && matchesTalle;
   });
+  return ordenarItems(filtrado);
 }
 
 function itemRowHtml(i, dep){
@@ -1040,10 +1060,9 @@ function itemRowHtml(i, dep){
     <div class="inv-row ${low ? 'low' : ''}">
       <div class="inv-dot"></div>
       <div class="inv-main">
-        <div class="inv-modelo">${i.modelo}</div>
+        <div class="inv-modelo">${i.modelo} <span class="inv-qty-badge">${i.cantidad}</span></div>
         <div class="inv-meta">${i.color} · Talle ${i.talle}${i.codigoBarras ? ' · ' + i.codigoBarras : ''}</div>
       </div>
-      <div class="inv-qty">${i.cantidad}</div>
       <div class="inv-row-actions">
         <button class="inv-icon" title="Editar" onclick="openEditItem('${i.id}','${dep}')">✎</button>
         <button class="inv-icon" title="Eliminar" onclick="deleteItem('${i.id}','${dep}')">✕</button>
@@ -1075,12 +1094,13 @@ function renderStats(){
 
 function lowStockItems(){
   const q = $('lowSearchInput').value.trim().toLowerCase();
-  return items.filter(i => i.cantidad <= i.minimo).filter(i => {
+  const filtrado = items.filter(i => i.cantidad <= i.minimo).filter(i => {
     if(!q) return true;
     const textoBase = `${i.modelo} ${i.color} ${i.talle}`.toLowerCase();
     const codigo = (i.codigoBarras || '').toLowerCase();
     return textoBase.includes(q) || (codigo && (q.startsWith(codigo) || codigo.includes(q)));
   });
+  return ordenarItems(filtrado);
 }
 
 function renderLowStock(){
