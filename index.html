@@ -434,6 +434,18 @@ input:focus, select:focus{ border-color: var(--amber); }
 @keyframes scanFlash{ 0%{opacity:1} 65%{opacity:1} 100%{opacity:0} }
 
 .helper{ font-size:11px; color:var(--paper-dim); margin: -8px 0 16px; font-family:'JetBrains Mono', monospace;}
+.transfer-hint{
+  display:none;
+  background: rgba(227,162,60,0.18);
+  border: 1px solid var(--amber-dark);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 8px 10px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+}
+.transfer-hint.show{ display:block; }
 .scan-hint{
   font-family:'JetBrains Mono', monospace;
   font-size: 10px;
@@ -707,6 +719,7 @@ input:focus, select:focus{ border-color: var(--amber); }
           <option value="">Todos los movimientos</option>
           <option value="entrada">Solo entradas</option>
           <option value="salida">Solo salidas</option>
+          <option value="traspaso">Solo traspasos</option>
         </select>
         <select id="movFilterModelo"><option value="">Modelo</option></select>
         <select id="movFilterDeposito">
@@ -794,6 +807,7 @@ input:focus, select:focus{ border-color: var(--amber); }
         <select id="mTipo">
           <option value="entrada">Entrada</option>
           <option value="salida">Salida</option>
+          <option value="transferencia">Traspaso entre depósitos</option>
         </select>
       </div>
       <div class="field">
@@ -801,6 +815,7 @@ input:focus, select:focus{ border-color: var(--amber); }
         <input id="mCantidad" type="number" min="1" value="1">
       </div>
     </div>
+    <div class="transfer-hint" id="mTransferHint"></div>
     <button type="button" class="btn btn-amber" id="openMoveScan" style="width:100%; margin-bottom:16px;">📷 Escanear y aplicar</button>
     <div class="scan-hint">o eleg&iacute; la suela manualmente:</div>
     <div class="field">
@@ -948,6 +963,74 @@ async function actualizarItemPorId(dep, itemId, mutarItem){
     return copia;
   });
   return { cancelado, item: itemFinal };
+}
+
+function nombreCortoDep(dep){ return dep === 'jk' ? 'JK' : 'Gallegos'; }
+
+// Dos artículos son "el mismo" si comparten código de barras, o si coinciden modelo + color + talle.
+function mismoArticulo(a, b){
+  if(a.codigoBarras && b.codigoBarras && a.codigoBarras === b.codigoBarras) return true;
+  const n = s => String(s || '').trim().toLowerCase();
+  return n(a.modelo) === n(b.modelo) && n(a.color) === n(b.color) && n(a.talle) === n(b.talle);
+}
+
+// Traspaso: sale del depósito de origen y entra al otro, TODO en una única transacción
+// (stock de ambos depósitos + los dos movimientos del historial). Si algo falla, no se aplica nada.
+async function transferirItem(depOrigen, itemId, cantidad, nota){
+  const depDestino = depOrigen === 'jk' ? 'gallegos' : 'jk';
+  const refOrigen = window.fb.doc(window.fb.db, 'depositos', depOrigen);
+  const refDestino = window.fb.doc(window.fb.db, 'depositos', depDestino);
+  let resultado = null;
+
+  await window.fb.runTransaction(window.fb.db, async (tx) => {
+    const snapO = await tx.get(refOrigen);
+    const snapD = await tx.get(refDestino);
+    const arrO = snapO.exists() ? (snapO.data().items || []) : [];
+    const arrD = snapD.exists() ? (snapD.data().items || []) : [];
+
+    const idxO = arrO.findIndex(i => i.id === itemId);
+    if(idxO === -1){ resultado = { error: 'origen-no-existe' }; return; }
+    const itemO = arrO[idxO];
+    if(itemO.cantidad < cantidad){ resultado = { error: 'sin-stock', disponible: itemO.cantidad }; return; }
+
+    const nuevoO = [...arrO];
+    nuevoO[idxO] = { ...itemO, cantidad: itemO.cantidad - cantidad };
+
+    const nuevoD = [...arrD];
+    const idxD = arrD.findIndex(d => mismoArticulo(itemO, d));
+    let itemDId, creadoEnDestino = false;
+    if(idxD === -1){
+      // El artículo no existía en el destino: se crea con los mismos datos y mínimo 0.
+      const nuevo = {
+        id: (depDestino === 'jk' ? 'jk' : '') + uid(),
+        modelo: itemO.modelo, color: itemO.color, talle: itemO.talle,
+        codigoBarras: itemO.codigoBarras || '', cantidad, minimo: 0
+      };
+      nuevoD.push(nuevo);
+      itemDId = nuevo.id;
+      creadoEnDestino = true;
+    } else {
+      nuevoD[idxD] = { ...arrD[idxD], cantidad: arrD[idxD].cantidad + cantidad };
+      itemDId = arrD[idxD].id;
+    }
+
+    tx.set(refOrigen, { items: nuevoO });
+    tx.set(refDestino, { items: nuevoD });
+
+    const ahora = Date.now();
+    const fecha = todayStr();
+    const traspasoId = uid();
+    const prefijo = nota ? nota + ' · ' : '';
+    const refMovSalida = window.fb.doc(window.fb.collection(window.fb.db, 'movimientos'));
+    const refMovEntrada = window.fb.doc(window.fb.collection(window.fb.db, 'movimientos'));
+    tx.set(refMovSalida, { itemId, deposito: depOrigen, tipo: 'salida', cantidad,
+      nota: prefijo + 'Traspaso a ' + nombreCortoDep(depDestino), fecha, ts: ahora + 1, traspasoId });
+    tx.set(refMovEntrada, { itemId: itemDId, deposito: depDestino, tipo: 'entrada', cantidad,
+      nota: prefijo + 'Traspaso desde ' + nombreCortoDep(depOrigen), fecha, ts: ahora, traspasoId });
+
+    resultado = { ok: true, origen: nuevoO[idxO], creadoEnDestino };
+  });
+  return resultado;
 }
 
 async function iniciarApp(){
@@ -1175,7 +1258,8 @@ function renderMoves(){
   });
 
   const filtrados = enriquecidos.filter(({ m, dep, item }) => {
-    if(tipoFilter && m.tipo !== tipoFilter) return false;
+    if(tipoFilter === 'traspaso'){ if(!m.traspasoId) return false; }
+    else if(tipoFilter && m.tipo !== tipoFilter) return false;
     if(depositoFilter && dep !== depositoFilter) return false;
     if(modeloFilter && (!item || item.modelo !== modeloFilter)) return false;
     if(q){
@@ -1333,6 +1417,20 @@ $('saveItem').addEventListener('click', async () => {
 });
 
 /* ---------- MOVE MODAL ---------- */
+function actualizarHintTraspaso(){
+  const hint = $('mTransferHint');
+  if($('mTipo').value === 'transferencia'){
+    const o = $('mDeposito').value;
+    const d = o === 'jk' ? 'gallegos' : 'jk';
+    hint.textContent = `⇄ Sale de ${nombreCortoDep(o)} y entra a ${nombreCortoDep(d)}. Una sola carga registra las dos puntas.`;
+    hint.classList.add('show');
+  } else {
+    hint.classList.remove('show');
+  }
+}
+$('mTipo').addEventListener('change', actualizarHintTraspaso);
+$('mDeposito').addEventListener('change', actualizarHintTraspaso);
+
 $('openMove').addEventListener('click', () => {
   if(items.length === 0 && itemsJK.length === 0){
     alert('Primero agregá al menos una suela a algún depósito.');
@@ -1343,6 +1441,7 @@ $('openMove').addEventListener('click', () => {
   $('mCantidad').value = 1;
   $('mNota').value = '';
   $('moveErr').classList.remove('show');
+  actualizarHintTraspaso();
   renderMoveItemSelect();
   $('moveOverlay').classList.add('show');
 });
@@ -1360,6 +1459,24 @@ $('saveMove').addEventListener('click', async () => {
   if(!item || isNaN(cantidad) || cantidad <= 0){
     $('moveErr').textContent = 'Elegí una suela y una cantidad válida.';
     $('moveErr').classList.add('show');
+    return;
+  }
+
+  if(tipo === 'transferencia'){
+    try{
+      const r = await transferirItem(dep, itemId, cantidad, nota);
+      if(!r || r.error){
+        $('moveErr').textContent = r && r.error === 'sin-stock'
+          ? `No hay stock suficiente en ${nombreCortoDep(dep)} (disponible: ${r.disponible}).`
+          : 'Esa suela ya no existe en el depósito de origen.';
+        $('moveErr').classList.add('show');
+        return;
+      }
+      $('moveOverlay').classList.remove('show');
+    }catch(e){
+      $('moveErr').textContent = 'Error al guardar en la base. No se aplicó nada, probá de nuevo.';
+      $('moveErr').classList.add('show');
+    }
     return;
   }
 
@@ -1496,7 +1613,9 @@ async function openScanner(target){
   scanPaused = false;
   ensureAudioCtx();
   $('scanStatus').textContent = target === 'movimiento'
-    ? `Escaneá cada suela: se suma o resta sola del Depósito ${$('mDeposito').value === 'jk' ? 'JK' : 'Gallegos'}.`
+    ? ($('mTipo').value === 'transferencia'
+        ? `Escaneá cada suela: sale de ${nombreCortoDep($('mDeposito').value)} y entra a ${nombreCortoDep($('mDeposito').value === 'jk' ? 'gallegos' : 'jk')}.`
+        : `Escaneá cada suela: se suma o resta sola del Depósito ${nombreCortoDep($('mDeposito').value)}.`)
     : 'Apuntá la cámara al código de barras...';
   $('scanFeedback').className = 'scan-feedback';
   $('scanFlash').className = 'scan-flash';
@@ -1586,6 +1705,24 @@ async function applyMovementScan(code){
     scanFeedback(`✕ Código sin coincidencia en el Depósito ${dep === 'jk' ? 'JK' : 'Gallegos'}: ${code}`, false);
   } else {
     try{
+      if(tipo === 'transferencia'){
+        const destino = nombreCortoDep(dep === 'jk' ? 'gallegos' : 'jk');
+        const r = await transferirItem(dep, item.id, cantidad, '');
+        if(!r || r.error){
+          huboError = true;
+          beep(false);
+          scanFeedback(r && r.error === 'sin-stock'
+            ? `✕ Stock insuficiente en ${nombreCortoDep(dep)} de ${item.modelo} ${item.color} T${item.talle} (disponible: ${r.disponible})`
+            : `✕ La suela ya no existe en ${nombreCortoDep(dep)}`, false);
+        } else {
+          $('mItem').value = item.id;
+          $('mItemInput').value = labelDeItem(r.origen);
+          beep(true);
+          scanFeedback(`✓ Traspaso aplicado: ${item.modelo} ${item.color} T${item.talle} · ${nombreCortoDep(dep)} → ${destino} (${cantidad})${r.creadoEnDestino ? ' · se creó en ' + destino : ''}`, true);
+        }
+        setTimeout(() => { scanPaused = false; }, huboError ? 2200 : 1400);
+        return;
+      }
       const resultado = await actualizarItemPorId(dep, item.id, (it) => {
         const nuevaCantidad = it.cantidad + (tipo === 'entrada' ? cantidad : -cantidad);
         if(tipo === 'salida' && nuevaCantidad < 0) return null;
